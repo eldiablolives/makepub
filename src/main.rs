@@ -1,36 +1,21 @@
 use std::env;
 use std::io;
 use std::fs::{self, DirEntry};
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use compress::compress_epub;
-use serde_yaml;
-use serde_derive::Deserialize;
 use pulldown_cmark::{html, Options, Parser};
 use uuid::Uuid;
-use chrono::prelude::*;
 
 mod preprocess;
 mod compress;
+mod types;
+mod util;
+mod epub;
 
-#[derive(Debug, Deserialize)]
-struct EpubInfo {
-    id: Option<String>,
-    name: String,
-    author: String,
-    title: String,
-    start: Option<String>,
-    start_title: Option<String>,
-    fonts: Option<Vec<String>>
-}
+use types::{EpubInfo, Page};
+use util::*;
+use epub::*;
 
-#[derive(Clone)]
-struct Page {
-    name: String,
-    file: String,
-    title: String,
-    body: String,
-}
 fn main() {
     // Get command-line arguments
     let args: Vec<String> = env::args().collect();
@@ -95,13 +80,6 @@ fn main() {
     compress_epub(dest_path.to_str().unwrap());
 }
 
-
-fn read_yaml_file<T: serde::de::DeserializeOwned>(file_path: &str) -> Result<T, Box<dyn std::error::Error>> {
-    let contents = fs::read_to_string(file_path)?;
-    let result = serde_yaml::from_str(&contents)?;
-    Ok(result)
-}
-
 fn check_font_files(folder_path: &str) -> io::Result<Option<Vec<String>>> {
     let entries: Vec<DirEntry> = fs::read_dir(Path::new(folder_path))?.collect::<Result<_, _>>()?;
     let mut font_files = Vec::new();
@@ -153,122 +131,6 @@ fn rearrange_start_page(epub_info: &EpubInfo, pages: &[Page]) -> Vec<Page> {
         }
     }
     rearranged_pages
-}
-
-fn create_toc_xhtml(epub_info: &EpubInfo, pages: &[Page], dest_folder: &str) {
-    // Create the destination path for toc.xhtml
-    let toc_path = PathBuf::from(dest_folder).join("OPS").join("toc.xhtml");
-
-    // Generate the content of toc.xhtml
-    let mut toc_content = String::from(r#"<?xml version="1.0" encoding="UTF-8"?>
-<html xml:lang="en" xmlns:epub="http://www.idpf.org/2007/ops" xmlns="http://www.w3.org/1999/xhtml">
-<head>
-    <meta charset="UTF-8" />
-    <title>Table of Contents</title>
-    <link rel="stylesheet" href="css/book.css" type="text/css" />
-    <meta name="EPB-UUID" content="" />
-</head>
-<body>
-    <nav id="toc" role="doc-toc" epub:type="toc">
-    <ol class="s2">
-"#);
-
-    // Iterate over the pages and generate <li> tags for pages with non-empty titles
-    for page in pages {
-        if !page.title.trim().is_empty() {
-            let page_link = format!("content/{}.xhtml", page.file);
-            let li_tag = format!(
-                r#"        <li><a href="{}">{}</a></li>"#,
-                page_link, page.title
-            );
-            toc_content.push_str(&li_tag);
-            toc_content.push('\n');
-        }
-    }
-
-    // Replace the content of the EPB-UUID meta tag
-    let epub_uuid = epub_info.id.as_deref().unwrap_or("");
-    toc_content = toc_content.replace(r#"meta name="EPB-UUID" content=""#, &format!(r#"meta name="EPB-UUID" content="{}"#, epub_uuid));
-
-    // Add the closing tags to toc_content
-    toc_content.push_str(r#"    </ol>
-    </nav>
-</body>
-</html>
-"#);
-
-    // Write the toc.xhtml content to the destination file
-    fs::write(&toc_path, toc_content)
-        .unwrap_or_else(|err| eprintln!("Error writing toc.xhtml file: {}", err));
-}
-
-
-fn create_xhtml_files(epub_info: &EpubInfo, pages: &[Page], dest_folder: &str) {
-    for page in pages {
-        let file_name = format!("{}.xhtml", page.file);
-        let file_path = Path::new(dest_folder).join("OPS/content").join(&file_name);
-        let xhtml_content = format!(
-            r#"<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-    <title>{}</title>
-    <meta name="EPB-UUID" content="{}" />
-    <meta charset="UTF-8" />
-    <link rel="stylesheet" href="../css/book.css" type="text/css" />
-</head>
-<body>
-    {}
-</body>
-</html>
-"#,
-            page.title,
-            epub_info.id.as_ref().unwrap_or(&"".to_string()),
-            page.body
-        );
-
-        fs::write(&file_path, xhtml_content)
-            .unwrap_or_else(|err| eprintln!("Error writing XHTML file: {}", err));
-    }
-}
-
-fn create_epub(dest_path: &Path, epub_info: &EpubInfo, pages: &Vec<Page>) {
-    // Create the destination folder if it doesn't exist
-    // if let Some(parent_dir) = dest_path.parent() {
-    //     fs::create_dir_all(parent_dir).expect("Failed to create destination folder");
-    // }
-
-    fs::create_dir_all(dest_path).expect("Failed to create destination folder");
-
-    // Create the necessary subdirectories within the EPUB structure
-    let epub_folders = vec!["META-INF", "OPS", "OPS/content"]; //
-    for folder in &epub_folders {
-        let folder_path = dest_path.join(folder);
-        fs::create_dir(&folder_path).expect("Failed to create folder");
-
-        // Create the core skeleton files in the appropriate folders
-        match *folder {
-            "META-INF" => {
-                create_file(&folder_path.join("container.xml"), create_container_xml_content());
-                
-                if let Some(_) = epub_info.fonts {
-                    create_file(&folder_path.join("com.apple.ibooks.display-options.xml"), create_apple_xml_meta());
-                }
-            }
-            "OPS" => {
-                create_file(&folder_path.join("epb.opf"), create_content_opf_content(epub_info, &pages));
-                create_file(&folder_path.join("epb.ncx"), create_toc_ncx_content(epub_info, &pages));
-            }
-            _ => {}
-        }
-    }
-
-    println!("Uncompressed skeleton EPUB structure created at: {:?}", dest_path);
-}
-
-fn create_file(file_path: &Path, file_content: String) {
-    let mut file = fs::File::create(file_path).expect("Failed to create file");
-    file.write_all(file_content.as_bytes())
-        .expect("Failed to write to file");
 }
 
 fn copy_files(source_path: &str, dest_path: &str) -> io::Result<()> {
@@ -335,49 +197,6 @@ fn render_markdown_to_page(source: &str) -> Page {
     }
 }
 
-fn sanitize_name(input: &str) -> String {
-    let mut output = input.to_lowercase();
-
-    // replace all non-alphanumeric characters including spaces with '-'
-    output = output
-        .chars()
-        .map(|c| if c.is_alphanumeric() { c } else { '-' })
-        .collect();
-
-    // remove instances of more than one dash in a row
-    while output.contains("--") {
-        output = output.replace("--", "-");
-    }
-
-    // remove trailing dashes
-    while output.ends_with("-") {
-        output.pop();
-    }
-
-    output
-}
-
-fn extract_title(markdown_content: &str) -> String {
-    for line in markdown_content.lines() {
-        if line.starts_with("##") {
-            // Extract the title from the line
-            let title = line.trim_start_matches("#").trim_start().to_string();
-            return title;
-        }
-    }
-    // If no title found, return an empty string or handle as desired
-    String::new()
-}
-
-fn get_file_name(source: &str) -> String {
-    let file_path = Path::new(source);
-    file_path
-        .file_stem()
-        .and_then(|stem| stem.to_str())
-        .map(|name| name.to_string())
-        .unwrap_or_else(|| String::new())
-}
-
 fn process_markdown_files(path: &str) -> Vec<Page> {
     // Read the directory contents
     let dir_entries = fs::read_dir(path).expect("Failed to read directory");
@@ -407,158 +226,4 @@ fn process_markdown_files(path: &str) -> Vec<Page> {
     results
 }
 
-
-fn create_content_opf_content(epub_info: &EpubInfo, pages: &[Page]) -> String {
-    let book_id = match &epub_info.id {
-        Some(id) => id,
-        None => "",
-    };
-
-    let manifest_items = pages
-        .iter()
-        .enumerate()
-        .map(|(index, page)| {
-            format!(
-                r#"<item id="item-{}" href="content/{}.xhtml" media-type="application/xhtml+xml" />"#,
-                index + 1,
-                page.file
-            )
-        })
-        .collect::<Vec<String>>()
-        .join("\n");
-
-    let spine_items = pages
-        .iter()
-        .enumerate()
-        .map(|(index, page)| format!("<itemref idref=\"item-{}\" />", index + 1))
-        .collect::<Vec<String>>()
-        .join("\n");
-
-    let modified = Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
-
-    // create a manifest entry for each font file
-    let font_items = match &epub_info.fonts {
-        Some(fonts) => fonts
-            .iter()
-            .enumerate()
-            .map(|(index, font)| {
-                format!(
-                    r#"<item href="fonts/{}" id="font{}" media-type="application/x-font-otf"/>"#,
-                    font, index + 1
-                )
-            })
-            .collect::<Vec<String>>()
-            .join("\n"),
-        None => String::new(),
-    };
-
-    format!(
-        r#"<?xml version="1.0" encoding="UTF-8"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookID">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:identifier id="BookID">{}</dc:identifier>
-    <dc:title>{}</dc:title>
-    <dc:creator>{}</dc:creator>
-    <dc:language>en</dc:language>
-    <meta property="dcterms:modified">{}</meta>
-  </metadata>
-  <manifest>
-    <item id="toc" href="toc.xhtml" media-type="application/xhtml+xml" properties="nav"/>
-
-    {}
-
-    <item id="ncx" href="epb.ncx" media-type="application/x-dtbncx+xml"/>
-    <item id="cover-image" href="images/cover.jpg" media-type="image/jpeg"/>
-    <item id="stylesheet" href="css/book.css" media-type="text/css"/>
-    {}
-
-</manifest>
-  <spine toc="ncx">
-    {}
-  </spine>
-</package>
-"#,
-        book_id,
-        epub_info.title,
-        epub_info.author,
-        modified,
-        manifest_items,
-        font_items,
-        spine_items
-    )
-}
-
-fn create_container_xml_content() -> String {
-    r#"<?xml version="1.0" encoding="UTF-8"?>
-<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
-  <rootfiles>
-    <rootfile full-path="OPS/epb.opf" media-type="application/oebps-package+xml" />
-  </rootfiles>
-</container>
-"#
-    .to_string()
-}
-
-fn create_apple_xml_meta() -> String {
-    r#"<?xml version="1.0" encoding="UTF-8"?>
-    <display_options>
-        <platform name="*">
-            <option name="specified-fonts">true</option>
-        </platform>
-    </display_options>
-    "#
-    .to_string()
-}
-
-fn create_toc_ncx_content(epub_info: &EpubInfo, pages: &[Page]) -> String {
-    let nav_map = pages
-        .iter()
-        .enumerate()
-        .filter(|(_, page)| !page.title.trim().is_empty())
-        .fold((String::new(), 1), |(acc, play_order), (index, page)| {
-            (
-                format!(
-                    "{}<navPoint id=\"navpoint-{}\" playOrder=\"{}\">
-                        <navLabel>
-                            <text>{}</text>
-                        </navLabel>
-                        <content src=\"content/{}.xhtml\"/>
-                    </navPoint>\n",
-                    acc,
-                    index + 1,
-                    play_order,
-                    page.title,
-                    page.file
-                ),
-                play_order + 1,
-            )
-        })
-        .0;
-
-    format!(
-        r#"<?xml version="1.0" encoding="UTF-8"?>
-<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
-  <head>
-    <meta name="dtb:uid" content="{}" />
-    <meta name="dtb:depth" content="1" />
-    <meta name="dtb:totalPageCount" content="0" />
-    <meta name="dtb:maxPageNumber" content="0" />
-  </head>
-  <docTitle>
-    <text>{}</text>
-  </docTitle>
-  <docAuthor>
-    <text>{}</text>
-  </docAuthor>
-  <navMap>
-    {}
-  </navMap>
-</ncx>
-"#,
-        epub_info.id.as_ref().unwrap_or(&"".to_string()),
-        epub_info.title,
-        epub_info.author,
-        nav_map
-    )
-}
 
