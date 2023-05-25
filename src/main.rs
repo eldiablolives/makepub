@@ -176,7 +176,7 @@ fn create_toc_xhtml(epub_info: &EpubInfo, pages: &[Page], dest_folder: &str) {
     // Iterate over the pages and generate <li> tags for pages with non-empty titles
     for page in pages {
         if !page.title.trim().is_empty() {
-            let page_link = format!("{}.xhtml", page.file);
+            let page_link = format!("content/{}.xhtml", page.file);
             let li_tag = format!(
                 r#"        <li><a href="{}">{}</a></li>"#,
                 page_link, page.title
@@ -214,7 +214,7 @@ fn create_xhtml_files(epub_info: &EpubInfo, pages: &[Page], dest_folder: &str) {
     <title>{}</title>
     <meta name="EPB-UUID" content="{}" />
     <meta charset="UTF-8" />
-    <link rel="stylesheet" href="css/book.css" type="text/css" />
+    <link rel="stylesheet" href="../css/book.css" type="text/css" />
 </head>
 <body>
     {}
@@ -419,7 +419,7 @@ fn create_content_opf_content(epub_info: &EpubInfo, pages: &[Page]) -> String {
         .enumerate()
         .map(|(index, page)| {
             format!(
-                r#"<item id="item-{}" href="{}.xhtml" media-type="application/xhtml+xml" />"#,
+                r#"<item id="item-{}" href="content/{}.xhtml" media-type="application/xhtml+xml" />"#,
                 index + 1,
                 page.file
             )
@@ -522,7 +522,7 @@ fn create_toc_ncx_content(epub_info: &EpubInfo, pages: &[Page]) -> String {
                         <navLabel>
                             <text>{}</text>
                         </navLabel>
-                        <content src=\"{}.xhtml\"/>
+                        <content src=\"content/{}.xhtml\"/>
                     </navPoint>\n",
                     acc,
                     index + 1,
