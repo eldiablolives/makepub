@@ -17,7 +17,7 @@ pub fn preprocess_markdown(text: &str) -> String {
 }
 
 fn replace_breaks(text: &str) -> String {
-    text.replace("\n----\n", "\n\n&nbsp;\n\n<center>***</center>\n\n&nbsp;\n\n")
+    text.replace("\n----\n", "\n\n&nbsp;\n\n<div class=\"center\">***</div>\n\n&nbsp;\n\n")
 }
 
 fn remove_spaces_between_quotes_and_punctuation(text: &str) -> String {

@@ -56,6 +56,10 @@ pub fn create_xhtml_files(epub_info: &EpubInfo, pages: &[Page], dest_folder: &st
     for page in pages {
         let file_name = format!("{}.xhtml", page.file);
         let file_path = Path::new(dest_folder).join("OPS/content").join(&file_name);
+        
+        // Use page.title if it is not empty, else use epub_info.title
+        let title = if !page.title.trim().is_empty() { &page.title } else { &epub_info.title };
+
         let xhtml_content = format!(
             r#"<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -70,7 +74,7 @@ pub fn create_xhtml_files(epub_info: &EpubInfo, pages: &[Page], dest_folder: &st
 </body>
 </html>
 "#,
-            page.title,
+            title,
             epub_info.id.as_ref().unwrap_or(&"".to_string()),
             page.body
         );
