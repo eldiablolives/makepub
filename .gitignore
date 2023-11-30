@@ -1,6 +1,8 @@
-/target
+.*
 /sample
 /ebook
 .DS_Store
 *.epub
 .vscode
+/target
+!.gitignore
