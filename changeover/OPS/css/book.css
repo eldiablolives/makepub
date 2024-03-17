@@ -1,0 +1,122 @@
+@font-face {
+  font-family: "CormorantGaramond-Medium";
+  src: url(../fonts/CormorantGaramond-Medium.otf);
+  font-style: normal;
+  font-weight: normal;
+}
+@font-face {
+  font-family: "Gelasio-Bold";
+  src: url(../fonts/Gelasio-Bold.otf);
+  font-style: normal;
+  font-weight: 700;
+}
+html, body {
+  background: transparent;
+  font-family: "CormorantGaramond-Medium";
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0em;
+  text-transform: none;
+  text-align: justify;
+}
+
+h1 {
+  padding-left: 0;
+  margin-top: 0;
+  padding-top: 0;
+  padding-right: 0;
+  margin-bottom: 7.407%;
+  padding-bottom: 0;
+  font-style: normal;
+  font-weight: 700;
+  font-stretch: normal;
+  font-size: 200%;
+  font-family: "Gelasio-Bold" !important;
+  letter-spacing: -0.02em;
+  font-variant: normal;
+  text-transform: none;
+  text-align: center;
+  text-indent: 0;
+  line-height: 1.125em;
+}
+
+h2 {
+  padding-left: 0;
+  margin-top: 0;
+  padding-top: 0;
+  padding-right: 0;
+  margin-bottom: 7.407%;
+  padding-bottom: 0;
+  font-style: normal;
+  font-weight: 700;
+  font-stretch: normal;
+  font-size: 150%;
+  font-family: "Gelasio-Bold" !important;
+  letter-spacing: -0.02em;
+  font-variant: normal;
+  text-transform: none;
+  text-align: center;
+  text-indent: 0;
+  line-height: 1.125em;
+}
+
+p {
+  padding-left: 0;
+  margin-top: 0;
+  padding-top: 0;
+  padding-right: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  text-indent: 1.2em;
+  line-height: 1.5em;
+}
+
+.title {
+  padding-left: 0;
+  margin-top: 0;
+  padding-top: 0;
+  padding-right: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  font-style: normal;
+  font-weight: 900;
+  font-stretch: normal;
+  font-size: 300%;
+  font-family: "Gelasio-Bold" !important;
+  font-variant: normal;
+  text-transform: none;
+  text-align: center;
+  text-indent: 0;
+}
+
+.author {
+  padding-left: 0;
+  margin-top: 0;
+  padding-top: 0;
+  padding-right: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  font-style: normal;
+  font-weight: 700;
+  font-stretch: normal;
+  font-size: 100%;
+  font-family: "Gelasio-Bold" !important;
+  font-variant: normal;
+  text-transform: none;
+  text-align: center;
+  text-indent: 0;
+}
+
+.cover {
+  max-width: 100%;
+  margin: auto;
+}
+
+.smaller {
+  font-size: 80%;
+}
+
+.center {
+  text-align: center;
+  margin: auto;
+}/*# sourceMappingURL=book.css.map */

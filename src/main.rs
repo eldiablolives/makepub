@@ -48,6 +48,11 @@ fn main() {
         Err(e) => println!("Error checking for font files: {}", e),
     }
 
+    match check_image_files(&folder_path) {
+        Ok(images) => epub_info.images = images,
+        Err(e) => println!("Error checking for image files: {}", e),
+    }
+    
     // Determine the EPUB name
     let epub_name = epub_info.name.clone();
 
@@ -100,6 +105,28 @@ fn check_font_files(folder_path: &str) -> io::Result<Option<Vec<String>>> {
     }
 
     Ok(Some(font_files))
+}
+
+fn check_image_files(folder_path: &str) -> io::Result<Option<Vec<String>>> {
+    let entries: Vec<DirEntry> = fs::read_dir(Path::new(folder_path))?.collect::<Result<_, _>>()?;
+    let mut image_files = Vec::new();
+
+    for entry in entries {
+        let path = entry.path();
+        if path.is_file() {
+            if let Some(ext) = path.extension() {
+                if ext == "jpg" || ext == "png" {
+                    if let Some(file_name) = path.file_name() {
+                        if let Some(file_name_str) = file_name.to_str() {
+                            image_files.push(String::from(file_name_str));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(Some(image_files))
 }
 
 fn create_mimetype_file(dest_folder: &str) {

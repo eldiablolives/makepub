@@ -162,6 +162,22 @@ fn create_content_opf_content(epub_info: &EpubInfo, pages: &[Page]) -> String {
         None => String::new(),
     };
 
+    // create a manifest entry for each image
+    let image_items = match &epub_info.images {
+        Some(images) => images
+            .iter()
+            .map(|image| {
+                let image_id = image.split('.').next().unwrap_or_default();
+                format!(
+                    r#"<item id="{}" href="images/{}" media-type="image/jpeg"/>"#,
+                    image_id, image
+                )
+            })
+            .collect::<Vec<String>>()
+            .join("\n"),
+        None => String::new(),
+    };
+
     format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookID">
@@ -174,15 +190,12 @@ fn create_content_opf_content(epub_info: &EpubInfo, pages: &[Page]) -> String {
   </metadata>
   <manifest>
     <item id="toc" href="toc.xhtml" media-type="application/xhtml+xml" properties="nav"/>
-
     {}
-
     <item id="ncx" href="epb.ncx" media-type="application/x-dtbncx+xml"/>
-    <item id="cover-image" href="images/cover.jpg" media-type="image/jpeg"/>
     <item id="stylesheet" href="css/book.css" media-type="text/css"/>
     {}
-
-</manifest>
+    {}
+  </manifest>
   <spine toc="ncx">
     {}
   </spine>
@@ -194,6 +207,7 @@ fn create_content_opf_content(epub_info: &EpubInfo, pages: &[Page]) -> String {
         modified,
         manifest_items,
         font_items,
+        image_items,
         spine_items
     )
 }

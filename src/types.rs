@@ -8,7 +8,8 @@ pub struct EpubInfo {
     pub title: String,
     pub start: Option<String>,
     pub start_title: Option<String>,
-    pub fonts: Option<Vec<String>>
+    pub fonts: Option<Vec<String>>,
+    pub images: Option<Vec<String>>
 }
 
 #[derive(Clone)]
