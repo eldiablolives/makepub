@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
   <head>
-    <meta name="dtb:uid" content="d25b0dda-a490-452c-8cdb-4e2fe48713bc" />
+    <meta name="dtb:uid" content="d2ac5837-3255-4420-aeeb-d3afafd4fd37" />
     <meta name="dtb:depth" content="1" />
     <meta name="dtb:totalPageCount" content="0" />
     <meta name="dtb:maxPageNumber" content="0" />
@@ -195,9 +195,9 @@
                     </navPoint>
 <navPoint id="navpoint-37" playOrder="31">
                         <navLabel>
-                            <text>Chapter 26 - Storm in a teacup</text>
+                            <text>Chapter 26 - Tempest in a teapot</text>
                         </navLabel>
-                        <content src="content/260-chapter-26-storm-in-a-teacup.xhtml"/>
+                        <content src="content/260-chapter-26-tempest-in-a-teapot.xhtml"/>
                     </navPoint>
 <navPoint id="navpoint-38" playOrder="32">
                         <navLabel>
